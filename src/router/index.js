@@ -1,7 +1,4 @@
-// import createRouter and createWebHistory from the package vue-router
 import { createRouter, createWebHistory } from 'vue-router'
-
-// import the pages to be used in the router
 import PageHome from '@/pages/Home.vue'
 import PagePools from '@/pages/Pools.vue'
 import PageLogin from '@/pages/Login.vue'
@@ -78,7 +75,7 @@ const routes = [
         },
 ]
 
-// Export because I will use this in main.js
+// Export because will use this in main.js
 export const router = createRouter({
   history: createWebHistory(),
   routes

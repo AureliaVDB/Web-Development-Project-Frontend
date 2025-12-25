@@ -4,7 +4,7 @@
       <div class="container mx-auto px-4">
         <div class="flex items-center justify-between h-16">
           <router-link to="/" class="text-xl font-bold">
-            🏊 Swimming Pool Booking
+            Swimming Pool Booking
           </router-link>
           
           <div class="flex gap-6">
