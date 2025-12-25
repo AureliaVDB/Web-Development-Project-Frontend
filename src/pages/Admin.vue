@@ -22,6 +22,13 @@
       </div>
       <div class="p-6">
         <div v-if="loading" class="text-center py-8">Loading...</div>
+        <div v-else-if="users.length === 0" class="text-center py-12 text-gray-600">
+          <p class="mb-4">No users found.</p>
+          <div class="flex justify-center gap-3">
+            <button @click="openUserForm()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">+ Add User</button>
+            <button @click="loadUsers" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded">Refresh</button>
+          </div>
+        </div>
         <table v-else class="w-full">
           <thead class="bg-gray-50">
             <tr>
@@ -63,6 +70,13 @@
       </div>
       <div class="p-6">
         <div v-if="loading" class="text-center py-8">Loading...</div>
+        <div v-else-if="bookings.length === 0" class="text-center py-12 text-gray-600">
+          <p class="mb-4">No bookings found.</p>
+          <div class="flex justify-center gap-3">
+            <button @click="openBookingForm()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">+ Add Booking</button>
+            <button @click="loadBookings" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded">Refresh</button>
+          </div>
+        </div>
         <table v-else class="w-full">
           <thead class="bg-gray-50">
             <tr>
@@ -106,6 +120,13 @@
       </div>
       <div class="p-6">
         <div v-if="loading" class="text-center py-8">Loading...</div>
+        <div v-else-if="pools.length === 0" class="text-center py-12 text-gray-600">
+          <p class="mb-4">No pools found.</p>
+          <div class="flex justify-center gap-3">
+            <button @click="openPoolForm()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">+ Add Pool</button>
+            <button @click="loadPools" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded">Refresh</button>
+          </div>
+        </div>
         <table v-else class="w-full text-sm">
           <thead class="bg-gray-50">
             <tr>

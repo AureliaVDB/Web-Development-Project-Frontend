@@ -66,7 +66,10 @@
       <div class="p-6">
         <div v-if="loading" class="text-center py-8 text-gray-500">Loading bookings...</div>
         <div v-else-if="error" class="text-center py-8 text-red-600">{{ error }}</div>
-        <div v-else-if="bookings.length === 0" class="text-center py-8 text-gray-500">No bookings yet</div>
+        <div v-else-if="bookings.length === 0" class="text-center py-12 text-gray-600">
+          <p class="mb-4">No bookings yet — browse pools to make your first booking.</p>
+          <router-link to="/pools" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Browse Pools</router-link>
+        </div>
 
         <div v-else class="space-y-4">
           <div v-for="b in bookings" :key="b.id" class="border rounded p-4 flex items-center justify-between">
