@@ -12,7 +12,7 @@ import BookPool from '@/pages/BookPool.vue'
 import PageAdmin from '@/pages/Admin.vue'
 import { isAuthenticated, getUser } from '@/utils/auth'
 
-// actual routes
+//routes
 const routes = [
     { 
         path: '/', 
