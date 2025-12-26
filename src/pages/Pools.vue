@@ -3,7 +3,7 @@
     <h1 class="text-3xl font-bold mb-4">Swimming Pools</h1>
 
     <div class="bg-white p-4 rounded-lg shadow mb-4">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
         <input
           v-model="filters.search"
           type="text"
@@ -42,6 +42,10 @@
             </ul>
           </div>
         </div>
+        <label class="flex items-center gap-2 text-sm text-gray-700 border border-gray-200 rounded px-3 py-2">
+          <input v-model="showFavoritesOnly" type="checkbox" class="h-4 w-4" />
+          <span>Show favorites</span>
+        </label>
         <div class="flex gap-2">
           <button @click="fetchPools" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
             Apply Filters
@@ -59,13 +63,29 @@
 
     <div v-else>
       <div class="flex items-center justify-between mb-3">
-        <p class="text-gray-700">Showing <span class="font-semibold">{{ count }}</span> pools</p>
+        <p class="text-gray-700">Showing <span class="font-semibold">{{ visibleCount }}</span> pools</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="pool in pools" :key="pool.id" class="bg-white p-6 rounded-lg shadow">
-          <h3 class="text-xl font-semibold mb-1">{{ pool.name }}</h3>
-          <p class="text-gray-600 mb-1">📍 {{ pool.address }}, {{ pool.city }}</p>
+        <div v-for="pool in visiblePools" :key="pool.id" class="bg-white p-6 rounded-lg shadow">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <h3 class="text-xl font-semibold mb-1">{{ pool.name }}</h3>
+              <p class="text-gray-600 mb-1">📍 {{ pool.address }}, {{ pool.city }}</p>
+            </div>
+            <button
+              v-if="isLoggedIn"
+              @click="toggleFavoritePool(pool)"
+              :disabled="favoriteLoading[pool.id]"
+              class="text-2xl leading-none transition-opacity"
+              :class="favoriteLoading[pool.id] ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'"
+              :aria-pressed="pool.isFavorited"
+              :aria-label="pool.isFavorited ? 'Remove from favorites' : 'Add to favorites'"
+            >
+              <span v-if="pool.isFavorited">❤️</span>
+              <span v-else>🤍</span>
+            </button>
+          </div>
           <p class="text-sm text-gray-500 mb-3">
             {{ pool.isIndoor ? 'Indoor' : 'Outdoor' }} • Capacity: {{ pool.capacity }}
           </p>
@@ -94,6 +114,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import api from '@/utils/api'
 import { getUser } from '@/utils/auth'
+import { toggleFavorite as toggleFavoriteApi } from '@/utils/favorites'
 
 const pools = ref([])
 const count = ref(0)
@@ -103,12 +124,15 @@ const isAdmin = computed(() => {
   const user = getUser()
   return user && user.role === 'admin'
 })
+const isLoggedIn = computed(() => Boolean(getUser()))
 
 const filters = reactive({
   search: '',
   type: '',
   city: ''
 })
+const showFavoritesOnly = ref(false)
+const favoriteLoading = ref({})
 
 // City suggestions state
 const citySuggestions = ref([])
@@ -142,6 +166,19 @@ const resetFilters = () => {
   filters.type = ''
   filters.city = ''
   fetchPools()
+}
+
+const toggleFavoritePool = async (pool) => {
+  if (!pool || favoriteLoading.value[pool.id]) return
+  favoriteLoading.value = { ...favoriteLoading.value, [pool.id]: true }
+  try {
+    await toggleFavoriteApi(pool.id)
+    pool.isFavorited = !pool.isFavorited
+  } catch (err) {
+    error.value = err.response?.data?.error || 'Could not update favorite'
+  } finally {
+    favoriteLoading.value = { ...favoriteLoading.value, [pool.id]: false }
+  }
 }
 
 onMounted(fetchPools)
@@ -182,4 +219,14 @@ const selectCity = (city) => {
   showSuggestions.value = false
   fetchPools()
 }
+
+const visiblePools = computed(() => {
+  if (!showFavoritesOnly.value) return pools.value
+  return pools.value.filter(pool => pool.isFavorited)
+})
+
+const visibleCount = computed(() => {
+  if (showFavoritesOnly.value) return visiblePools.value.length
+  return count.value || pools.value.length
+})
 </script>

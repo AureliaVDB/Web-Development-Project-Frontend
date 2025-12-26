@@ -14,14 +14,30 @@
       <!-- Pool Info -->
       <div class="bg-white rounded-lg shadow p-6 mb-6">
         <router-link to="/pools" class="text-blue-600 hover:underline mb-4 inline-block">← Back to Pools</router-link>
-        <h1 class="text-3xl font-bold mb-2">{{ pool.name }}</h1>
-        <p class="text-gray-600 mb-1">📍 {{ pool.address }}, {{ pool.city }}</p>
-        <p class="text-sm text-gray-500 mb-2">
-          {{ pool.isIndoor ? 'Indoor' : 'Outdoor' }} • Capacity: {{ pool.capacity }} people per hour
-        </p>
-        <p class="text-sm text-gray-700 font-medium">
-          Operating Hours: {{ pool.openingTime }} – {{ pool.closingTime }}
-        </p>
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <h1 class="text-3xl font-bold mb-2">{{ pool.name }}</h1>
+            <p class="text-gray-600 mb-1">📍 {{ pool.address }}, {{ pool.city }}</p>
+            <p class="text-sm text-gray-500 mb-2">
+              {{ pool.isIndoor ? 'Indoor' : 'Outdoor' }} • Capacity: {{ pool.capacity }} people per hour
+            </p>
+            <p class="text-sm text-gray-700 font-medium">
+              Operating Hours: {{ pool.openingTime }} – {{ pool.closingTime }}
+            </p>
+          </div>
+          <button
+            v-if="isLoggedIn"
+            @click="handleToggleFavorite"
+            :disabled="favoriteLoading"
+            class="text-3xl leading-none" 
+            :class="favoriteLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'"
+            :aria-pressed="isFavorited"
+            :aria-label="isFavorited ? 'Remove from favorites' : 'Add to favorites'"
+          >
+            <span v-if="isFavorited">❤️</span>
+            <span v-else>🤍</span>
+          </button>
+        </div>
       </div>
 
       <!-- Calendar Section -->
@@ -128,14 +144,18 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/utils/api'
+import { getUser } from '@/utils/auth'
+import { toggleFavorite, getFavorites } from '@/utils/favorites'
 
 const route = useRoute()
 const router = useRouter()
-const poolId = route.params.id
+const poolId = Number(route.params.id)
 
 const pool = ref(null)
 const loading = ref(true)
 const error = ref('')
+const isFavorited = ref(false)
+const favoriteLoading = ref(false)
 
 // Calendar state
 const currentDate = ref(new Date())
@@ -149,6 +169,7 @@ const selectedTimeSlot = ref(null)
 
 // Booking state
 const bookingInProgress = ref(false)
+const isLoggedIn = computed(() => Boolean(getUser()))
 
 const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -246,6 +267,11 @@ async function fetchPoolDetails() {
     loading.value = true
     const response = await api.get(`/pools/${poolId}`)
     pool.value = response.data
+    if (typeof response.data?.isFavorited === 'boolean') {
+      isFavorited.value = response.data.isFavorited
+    } else {
+      await syncFavoriteState()
+    }
     await loadMonthAvailability()
   } catch (err) {
     error.value = err.response?.data?.error || 'Failed to load pool details'
@@ -292,6 +318,29 @@ function isWithinHours(slotStart, openingTime, closingTime) {
   const o = toMinutes(openingTime)
   const c = toMinutes(closingTime)
   return s >= o && s < c
+}
+
+async function syncFavoriteState() {
+  if (!isLoggedIn.value) return
+  try {
+    const favorites = await getFavorites()
+    isFavorited.value = favorites.some(f => String(f.id) === String(poolId))
+  } catch (err) {
+    // Ignore favorite sync errors to keep booking flow working
+  }
+}
+
+async function handleToggleFavorite() {
+  if (favoriteLoading.value) return
+  favoriteLoading.value = true
+  try {
+    await toggleFavorite(poolId)
+    isFavorited.value = !isFavorited.value
+  } catch (err) {
+    alert(err.response?.data?.error || 'Could not update favorite')
+  } finally {
+    favoriteLoading.value = false
+  }
 }
 
 async function createBooking() {
