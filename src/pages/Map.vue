@@ -131,7 +131,7 @@ const createPoolMarker = (pool) => {
 const generatePopup = (pool) => {
   const bookButton = isAdmin.value
     ? '<span class="inline-block bg-gray-400 text-white text-xs px-3 py-1 rounded cursor-not-allowed">Admin View Only</span>'
-    : `<a href="/pools/${pool.id}/book" class="inline-block bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700">Book</a>`
+    : `<a href="/pools/${pool.id}/book" class="inline-block bg-blue-600 text-xs px-3 py-1 rounded hover:bg-blue-700" style="color: white; text-decoration: none;">Book</a>`
 
   const favoriteButton = isAdmin.value
     ? ''

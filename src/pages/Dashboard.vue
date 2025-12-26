@@ -63,6 +63,35 @@
         <h2 class="text-xl font-semibold">My Bookings</h2>
         <button @click="loadBookings" class="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded">Refresh</button>
       </div>
+
+      <!-- Tabs -->
+      <div class="border-b">
+        <div class="flex">
+          <button
+            @click="activeTab = 'upcoming'"
+            :class="[
+              'px-6 py-3 font-medium transition-colors',
+              activeTab === 'upcoming'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-800'
+            ]"
+          >
+            Upcoming ({{ upcomingBookings.length }})
+          </button>
+          <button
+            @click="activeTab = 'past'"
+            :class="[
+              'px-6 py-3 font-medium transition-colors',
+              activeTab === 'past'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-800'
+            ]"
+          >
+            Past ({{ pastBookings.length }})
+          </button>
+        </div>
+      </div>
+
       <div class="p-6">
         <div v-if="loading" class="text-center py-8 text-gray-500">Loading bookings...</div>
         <div v-else-if="error" class="text-center py-8 text-red-600">{{ error }}</div>
@@ -71,25 +100,53 @@
           <router-link to="/pools" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Browse Pools</router-link>
         </div>
 
-        <div v-else class="space-y-4">
-          <div v-for="b in bookings" :key="b.id" class="border rounded p-4 flex items-center justify-between">
-            <div>
-              <div class="font-semibold">{{ b.pool.name }}</div>
-              <div class="text-sm text-gray-600">{{ b.pool.address }}, {{ b.pool.city }}</div>
-            </div>
-            <div class="flex items-center gap-4">
-              <div class="text-right">
-                <div class="font-medium">{{ formatDate(b.bookingDate) }}</div>
-                <div class="text-sm text-gray-600">{{ b.startTime }}–{{ b.endTime }}</div>
+        <!-- Upcoming Bookings -->
+        <div v-else-if="activeTab === 'upcoming'">
+          <div v-if="upcomingBookings.length === 0" class="text-center py-8 text-gray-600">
+            No upcoming bookings
+          </div>
+          <div v-else class="space-y-4">
+            <div v-for="b in upcomingBookings" :key="b.id" class="border rounded p-4 flex items-center justify-between">
+              <div>
+                <div class="font-semibold">{{ b.pool.name }}</div>
+                <div class="text-sm text-gray-600">{{ b.pool.address }}, {{ b.pool.city }}</div>
               </div>
-              <button
-                v-if="canCancel(b)"
-                @click="cancelBooking(b)"
-                class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm"
-              >
-                Cancel
-              </button>
-              <span v-else class="text-xs text-gray-400">{{ getStatus(b) }}</span>
+              <div class="flex items-center gap-4">
+                <div class="text-right">
+                  <div class="font-medium">{{ formatDate(b.bookingDate) }}</div>
+                  <div class="text-sm text-gray-600">{{ b.startTime }}–{{ b.endTime }}</div>
+                </div>
+                <button
+                  v-if="canCancel(b)"
+                  @click="cancelBooking(b)"
+                  class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm"
+                >
+                  Cancel
+                </button>
+                <span v-else class="text-xs text-gray-400">{{ getStatus(b) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Past Bookings -->
+        <div v-else-if="activeTab === 'past'">
+          <div v-if="pastBookings.length === 0" class="text-center py-8 text-gray-600">
+            No past bookings
+          </div>
+          <div v-else class="space-y-4">
+            <div v-for="b in pastBookings" :key="b.id" class="border rounded p-4 flex items-center justify-between opacity-75">
+              <div>
+                <div class="font-semibold">{{ b.pool.name }}</div>
+                <div class="text-sm text-gray-600">{{ b.pool.address }}, {{ b.pool.city }}</div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="text-right">
+                  <div class="font-medium">{{ formatDate(b.bookingDate) }}</div>
+                  <div class="text-sm text-gray-600">{{ b.startTime }}–{{ b.endTime }}</div>
+                </div>
+                <span class="text-xs text-green-600 font-medium">Completed</span>
+              </div>
             </div>
           </div>
         </div>
@@ -106,6 +163,7 @@ import api from '@/utils/api'
 const bookings = ref([])
 const loading = ref(false)
 const error = ref('')
+const activeTab = ref('upcoming')
 
 // Toast notification state
 const toast = ref({
@@ -133,15 +191,29 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 }
 
-const upcomingCount = computed(() => {
+const upcomingBookings = computed(() => {
   const now = new Date()
-  return bookings.value.filter(b => new Date(b.bookingDate) >= new Date(now.toDateString())).length
+  now.setHours(0, 0, 0, 0)
+  return bookings.value.filter(b => {
+    const bookingDate = new Date(b.bookingDate)
+    bookingDate.setHours(0, 0, 0, 0)
+    return bookingDate >= now
+  }).sort((a, b) => new Date(a.bookingDate) - new Date(b.bookingDate))
 })
 
-const completedCount = computed(() => {
+const pastBookings = computed(() => {
   const now = new Date()
-  return bookings.value.filter(b => new Date(b.bookingDate) < new Date(now.toDateString())).length
+  now.setHours(0, 0, 0, 0)
+  return bookings.value.filter(b => {
+    const bookingDate = new Date(b.bookingDate)
+    bookingDate.setHours(0, 0, 0, 0)
+    return bookingDate < now
+  }).sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate))
 })
+
+const upcomingCount = computed(() => upcomingBookings.value.length)
+
+const completedCount = computed(() => pastBookings.value.length)
 
 const totalHours = computed(() => bookings.value.reduce((sum, b) => sum + (b.duration || 1), 0))
 

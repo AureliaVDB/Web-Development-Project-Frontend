@@ -13,6 +13,7 @@
             <router-link to="/map" class="hover:text-blue-200">Map</router-link>
 
             <template v-if="authed">
+              <router-link to="/dashboard" class="hover:text-blue-200">Dashboard</router-link>
               <router-link v-if="isAdmin" to="/admin" class="hover:text-blue-200">Admin</router-link>
               <router-link to="/profile" class="hover:text-blue-200">Profile</router-link>
               <button @click="logout" class="hover:text-blue-200">Logout</button>

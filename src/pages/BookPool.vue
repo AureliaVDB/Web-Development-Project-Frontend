@@ -281,9 +281,38 @@ async function fetchPoolDetails() {
 }
 
 async function loadMonthAvailability() {
-  // For now, we'll load availability when user selects a date
-  // Later we can optimize by loading the whole month at once
-  // This keeps it simple for the initial implementation
+  if (!pool.value) return
+  
+  const year = currentDate.value.getFullYear()
+  const month = currentDate.value.getMonth()
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  
+  const startDate = formatDateISO(firstDay)
+  const endDate = formatDateISO(lastDay)
+  
+  try {
+    const response = await api.get(`/pools/${poolId}/availability`, {
+      params: { startDate, endDate }
+    })
+    
+    const dates = response.data?.dates || []
+    const newAvailability = {}
+    
+    dates.forEach(d => {
+      if (d.hasAvailableSlots) {
+        newAvailability[d.date] = 'available'
+      } else if (d.totalSlots === 0) {
+        newAvailability[d.date] = 'closed'
+      } else {
+        newAvailability[d.date] = 'full'
+      }
+    })
+    
+    dayAvailability.value = newAvailability
+  } catch (err) {
+    console.error('Error loading month availability:', err)
+  }
 }
 
 async function loadTimeSlots(date) {
